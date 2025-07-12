@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from typing import List, Optional
+from app.auth_dep import get_current_user
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -46,7 +47,7 @@ def create_order(order_data: schemas.OrderCreate, db: Session = Depends(get_db))
     return order
 
 @router.get("/", response_model=List[schemas.OrderOut])
-def get_all_orders(db: Session = Depends(get_db)):
+def get_all_orders(db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(get_current_user)):
     orders = db.query(models.Order).all()
     return orders
 
@@ -66,7 +67,7 @@ def get_order_by_id(order_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{order_id}", response_model=schemas.OrderOut)
-def update_order_status(order_id: int, status_update: schemas.OrderStatusUpdate, db: Session = Depends(get_db)):
+def update_order_status(order_id: int, status_update: schemas.OrderStatusUpdate, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(get_current_user)):
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -76,3 +77,14 @@ def update_order_status(order_id: int, status_update: schemas.OrderStatusUpdate,
     db.refresh(order)
 
     return order
+
+
+@router.delete("/{order_id}")
+def delete_order(order_id: int, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(get_current_user)):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    db.delete(order)
+    db.commit()
+    return {"message": "Order deleted successfully"}
