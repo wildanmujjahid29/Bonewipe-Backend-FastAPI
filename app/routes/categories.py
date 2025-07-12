@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app import models, schemas
+from app.auth_dep import get_current_user
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
@@ -19,7 +20,7 @@ def get_categories(db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=schemas.Category)
-def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_db)):
+def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(get_current_user)):
     existing = db.query(models.Category).filter(models.Category.name == category.name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Category already exists")
@@ -30,7 +31,7 @@ def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_
     return new_category
 
 @router.put("/{category_id}", response_model=schemas.Category)
-def update_category(category_id: int, updated_category: schemas.CategoryCreate, db: Session = Depends(get_db)):
+def update_category(category_id: int, updated_category: schemas.CategoryCreate, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(get_current_user)):
     category = db.query(models.Category).get(category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -52,7 +53,7 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{category_id}")
-def delete_category(category_id: int, db: Session = Depends(get_db)):
+def delete_category(category_id: int, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(get_current_user)):
     category = db.query(models.Category).get(category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
