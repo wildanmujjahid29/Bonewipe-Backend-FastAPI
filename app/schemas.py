@@ -1,6 +1,31 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+from pydantic import ConfigDict
+
+# ========== User ==========
+class UserBase(BaseModel):
+    username: str
+    full_name: Optional[str] = None
+    email: str
+    password: str
+
+class UserCreate(UserBase):
+    password: str
+
+class UserOut(UserBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        model_config = ConfigDict(from_attributes=True)
+        
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
 
 # ========== Category ==========
 class CategoryBase(BaseModel):
@@ -13,7 +38,7 @@ class Category(CategoryBase):
     id: int
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 
 # ========== Product ==========
@@ -33,13 +58,13 @@ class Product(ProductBase):
     category: Category  # include nested category info
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 class ProductOut(ProductBase):
     id: int
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 
 # ==== Bank ====
@@ -54,7 +79,7 @@ class BankOut(BankBase):
     id: int
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 
 # ========== Order item ==========
@@ -67,7 +92,7 @@ class OrderItemOut(OrderItemCreate):
     price_at_order: float
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 # ========== Order ==========
 class OrderCreate(BaseModel):
@@ -92,7 +117,7 @@ class OrderOut(BaseModel):
     items: List[OrderItemOut]
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 # ========== Tambahan ==========
 class OrderDetailOut(OrderOut):
