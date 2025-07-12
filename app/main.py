@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
 from app.database import SessionLocal
-from app.routes import products, categories, orders, banks
+from app.routes import products, categories, orders, banks, auth
 
 app = FastAPI()
 
@@ -21,6 +21,7 @@ def check_db_connection():
     finally:
         db.close()
 
+app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(products.router)
 app.include_router(orders.router)
