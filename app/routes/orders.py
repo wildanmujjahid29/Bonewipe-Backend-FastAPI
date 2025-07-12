@@ -51,22 +51,8 @@ def get_all_orders(db: Session = Depends(get_db), current_user: schemas.UserOut 
     orders = db.query(models.Order).all()
     return orders
 
-@router.get("/{order_id}", response_model=schemas.OrderDetailOut)
-def get_order_by_id(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(models.Order).filter(models.Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
 
-    total = sum(item.quantity * item.price_at_order for item in order.items)
-
-    return {
-        **order.__dict__,
-        "items": order.items,
-        "total": total
-    }
-
-
-@router.put("/{order_id}", response_model=schemas.OrderOut)
+@router.put("/status/{order_id}", response_model=schemas.OrderOut)
 def update_order_status(order_id: int, status_update: schemas.OrderStatusUpdate, db: Session = Depends(get_db), current_user: schemas.UserOut = Depends(get_current_user)):
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
@@ -88,3 +74,52 @@ def delete_order(order_id: int, db: Session = Depends(get_db), current_user: sch
     db.delete(order)
     db.commit()
     return {"message": "Order deleted successfully"}
+
+@router.get("/active", response_model=List[schemas.OrderOut])
+def get_active_orders(
+    email : str,
+    phone : str,
+    db: Session = Depends(get_db)
+):
+    active_statuses = ["pending", "diproses", "dikirim"]
+    orders = db.query(models.Order).filter(
+        models.Order.customer_email == email,
+        models.Order.customer_phone == phone,
+        models.Order.status.in_(active_statuses)
+    ).all()
+
+    if not orders:
+        raise HTTPException(status_code=404, detail="Tidak ada pesanan aktif ditemukan.")
+    
+    return orders
+
+@router.get("/history", response_model=List[schemas.OrderOut])
+def get_order_history(
+    email: str,
+    phone: str,
+    db: Session = Depends(get_db)
+):
+    orders = db.query(models.Order).filter(
+        models.Order.customer_email == email,
+        models.Order.customer_phone == phone
+    ).order_by(models.Order.created_at.desc()).all()
+
+    if not orders:
+        raise HTTPException(status_code=404, detail="Riwayat pesanan tidak ditemukan.")
+    
+    return orders
+
+@router.get("/{order_id}", response_model=schemas.OrderDetailOut)
+def get_order_by_id(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    total = sum(item.quantity * item.price_at_order for item in order.items)
+
+    return {
+        **order.__dict__,
+        "items": order.items,
+        "total": total
+    }
+

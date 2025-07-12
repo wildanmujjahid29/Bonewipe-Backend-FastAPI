@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app import models, schemas
 from app.auth_dep import get_current_user
+from typing import List, Optional   
+from fastapi import Query
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -13,9 +15,21 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/", response_model=list[schemas.Product])
-def get_products(db: Session = Depends(get_db)):
-    products = db.query(models.Product).all()
+@router.get("/", response_model=List[schemas.Product])
+def get_products(
+    db: Session = Depends(get_db),
+    search: Optional[str] = Query(None),
+    category_id: Optional[int] = Query(None)
+):
+    query = db.query(models.Product)
+
+    if search:
+        query = query.filter(models.Product.name.ilike(f"%{search}%"))
+
+    if category_id:
+        query = query.filter(models.Product.category_id == category_id)
+
+    products = query.all()
     return products
 
 @router.post("/", response_model=schemas.ProductOut)
