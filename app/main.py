@@ -3,6 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
 from app.database import SessionLocal
 from app.routes import products, categories, orders, banks, auth, admin
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
@@ -20,6 +21,14 @@ def check_db_connection():
         return {"status": "fail", "error": str(e)}
     finally:
         db.close()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth.router)
 app.include_router(categories.router)
